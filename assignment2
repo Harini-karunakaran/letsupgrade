@@ -1,0 +1,43 @@
+1) Create an array with five names and print all five in reverse.
+
+def reverseList(A, start, end):
+    while start < end:
+        A[start], A[end] = A[end], A[start]
+        start += 1
+        end -= 1
+ 
+# Driver function to test above function
+A = ['hema', 'jeevitha', 'harini', 'divya', 'hanshitha', 'rakshi']
+print(A)
+reverseList(A, 0, 5)
+print("Reversed list is")
+print(A)
+
+o/p:
+ ['hema', 'jeevitha', 'harini', 'divya', 'hanshitha', 'rakshi']
+ reversed list is 
+ ['rakshi' , 'hanshitha', 'divya', 'harini', 'jeevitha', 'hema']
+
+ ----------------------------------------------------------------------------------------------------------
+
+ 2)Print only the elements which are dvisible by 5 from 1 to 50
+
+ def res():
+    for i in range(1,51):
+        if (i%5 == 0):
+            print(i)
+res()
+
+o/p:
+5
+10
+15
+20
+25
+30
+35
+40
+45
+50
+
+---------------------------------------------------------------------------------------------------------
