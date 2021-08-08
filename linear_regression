@@ -1,0 +1,91 @@
+
+4)Apply simple linear regression and submit it as an assignment.
+(snapshot in doc folder)
+
+Here is a business problem, where a company wants to establish a relationship between salary of its employees
+and the experience they have. We are going to investigate that correlation using Simple Linear Regression.
+
+/*Importing the dataset and performing Data Preprocessing*/
+
+DATA:
+Years Experience	Salary
+1.1	               39343.00
+1.3	               46205.00
+1.5	               37731.00
+2.0	               43525.00
+2.2	               39891.00
+2.9	               56642.00
+3.0	               60150.00
+3.2	               54445.00
+3.2	               64445.00
+3.7	               57189.00
+3.9	               63218.00
+4.0	               55794.00
+4.0	               56957.00
+4.1	               57081.00
+4.5	               61111.00
+4.9	               67938.00
+5.1	               66029.00
+5.3	               83088.00
+5.9	               81363.00
+6.0	               93940.00
+6.8	               91738.00
+7.1	               98273.00
+7.9	              101302.00
+8.2	              113812.00
+8.7	              109431.00
+9.0	              105582.00
+9.5	              116969.00
+9.6	              112635.00
+10.3              122391.00
+10.5              121872.00
+
+# Importing the libraries
+import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
+# Importing the dataset
+dataset = pd.read_csv('SimpleLinearRegression.csv')
+X = dataset.iloc[:, :-1].values
+y = dataset.iloc[:, -1].values
+# Splitting the dataset into the Training set and Test set
+from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 1/3, random_state = 0)
+
+After executing this code, we have our training and testing sets split along with arrays and vectors 
+of independent and dependent attributes respectively.
+
+/*Fit the dataset into Simple Linear Regression model*/
+
+In order to fit the data into our regressor model, we need to import a library, call the method for Regression
+and fit our training data to that regression model. 
+
+CODE:
+# Fitting Simple Linear Regression to the Training set
+from sklearn.linear_model import LinearRegression
+regressor = LinearRegression()
+regressor.fit(X_train, y_train)
+
+now predict the values of our testing set and then later compare them with the actual values of the test set.
+# Predicting the Test set results
+y_pred = regressor.predict(X_test)
+
+/*Visualising the correlation in the dataset*/
+
+Inorder to judge the actual correlation amongst the data, we are going to plot two curves.
+# Visualising the Training set results
+plt.scatter(X_train, y_train, color = 'red')
+plt.plot(X_train, regressor.predict(X_train), color = 'blue')
+plt.title('Salary vs Experience (Training set)')
+plt.xlabel('Years of Experience')
+plt.ylabel('Salary')
+plt.show()
+
+#Visualising the Test set results
+plt.scatter(X_test, y_test, color = 'red')
+plt.plot(X_train, regressor.predict(X_train), color = 'blue')
+plt.title('Salary vs Experience (Test set)')
+plt.xlabel('Years of Experience')
+plt.ylabel('Salary')
+plt.show()
+----------------------------------------------------------------------------------------------------------
