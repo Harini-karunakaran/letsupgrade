@@ -1,0 +1,730 @@
+3)Do data analysis on two features of Boston data and write your insights.
+
+Analysis on Boston Housing Data
+
+                                    BOSTON HOUSING DATA
+Introduction
+
+This project aims to find the factors affecting the domestic property value in the city of Boston. 
+Factors like per capita income, environmental factors, educational facilities, property size, etc were 
+taken into consideration to determine the most significant parameters. We create multiple linear regression
+model using forward stepwise selection and compare its performance with the linear regression model 
+containing all the variables. We use the following metrics to compare the performance of the models:R-squared
+value, Adjusted R-squared value, AIC, BIC and model Mean Squared Error (MSE).
+
+Packages Required:
+library(corrr)
+library(gridExtra)
+library(ggplot2)
+library(tidyverse)
+library(dplyr)
+library(DT)
+library(MASS)
+library(leaps)
+library(glmnet)
+library(PerformanceAnalytics)
+
+Data Exploration
+
+Checking for Data structure
+Our data contains 506 observations containing 14 variables. The datatypes are as follows:
+
+glimpse(Boston)
+## Observations: 506
+## Variables: 14
+## $ crim    <dbl> 0.00632, 0.02731, 0.02729, 0.03237, 0.06905, 0.02985, ...
+## $ zn      <dbl> 18.0, 0.0, 0.0, 0.0, 0.0, 0.0, 12.5, 12.5, 12.5, 12.5,...
+## $ indus   <dbl> 2.31, 7.07, 7.07, 2.18, 2.18, 2.18, 7.87, 7.87, 7.87, ...
+## $ chas    <int> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ...
+## $ nox     <dbl> 0.538, 0.469, 0.469, 0.458, 0.458, 0.458, 0.524, 0.524...
+## $ rm      <dbl> 6.575, 6.421, 7.185, 6.998, 7.147, 6.430, 6.012, 6.172...
+## $ age     <dbl> 65.2, 78.9, 61.1, 45.8, 54.2, 58.7, 66.6, 96.1, 100.0,...
+## $ dis     <dbl> 4.0900, 4.9671, 4.9671, 6.0622, 6.0622, 6.0622, 5.5605...
+## $ rad     <int> 1, 2, 2, 3, 3, 3, 5, 5, 5, 5, 5, 5, 5, 4, 4, 4, 4, 4, ...
+## $ tax     <dbl> 296, 242, 242, 222, 222, 222, 311, 311, 311, 311, 311,...
+## $ ptratio <dbl> 15.3, 17.8, 17.8, 18.7, 18.7, 18.7, 15.2, 15.2, 15.2, ...
+## $ black   <dbl> 396.90, 396.90, 392.83, 394.63, 396.90, 394.12, 395.60...
+## $ lstat   <dbl> 4.98, 9.14, 4.03, 2.94, 5.33, 5.21, 12.43, 19.15, 29.9...
+## $ medv    <dbl> 24.0, 21.6, 34.7, 33.4, 36.2, 28.7, 22.9, 27.1, 16.5, ...
+
+Data Summary
+A quick summary of the distribution of every variable in the data
+
+summary(Boston)
+##       crim                zn             indus            chas        
+##  Min.   : 0.00632   Min.   :  0.00   Min.   : 0.46   Min.   :0.00000  
+##  1st Qu.: 0.08204   1st Qu.:  0.00   1st Qu.: 5.19   1st Qu.:0.00000  
+##  Median : 0.25651   Median :  0.00   Median : 9.69   Median :0.00000  
+##  Mean   : 3.61352   Mean   : 11.36   Mean   :11.14   Mean   :0.06917  
+##  3rd Qu.: 3.67708   3rd Qu.: 12.50   3rd Qu.:18.10   3rd Qu.:0.00000  
+##  Max.   :88.97620   Max.   :100.00   Max.   :27.74   Max.   :1.00000  
+##       nox               rm             age              dis        
+##  Min.   :0.3850   Min.   :3.561   Min.   :  2.90   Min.   : 1.130  
+##  1st Qu.:0.4490   1st Qu.:5.886   1st Qu.: 45.02   1st Qu.: 2.100  
+##  Median :0.5380   Median :6.208   Median : 77.50   Median : 3.207  
+##  Mean   :0.5547   Mean   :6.285   Mean   : 68.57   Mean   : 3.795  
+##  3rd Qu.:0.6240   3rd Qu.:6.623   3rd Qu.: 94.08   3rd Qu.: 5.188  
+##  Max.   :0.8710   Max.   :8.780   Max.   :100.00   Max.   :12.127  
+##       rad              tax           ptratio          black       
+##  Min.   : 1.000   Min.   :187.0   Min.   :12.60   Min.   :  0.32  
+##  1st Qu.: 4.000   1st Qu.:279.0   1st Qu.:17.40   1st Qu.:375.38  
+##  Median : 5.000   Median :330.0   Median :19.05   Median :391.44  
+##  Mean   : 9.549   Mean   :408.2   Mean   :18.46   Mean   :356.67  
+##  3rd Qu.:24.000   3rd Qu.:666.0   3rd Qu.:20.20   3rd Qu.:396.23  
+##  Max.   :24.000   Max.   :711.0   Max.   :22.00   Max.   :396.90  
+##      lstat            medv      
+##  Min.   : 1.73   Min.   : 5.00  
+##  1st Qu.: 6.95   1st Qu.:17.02  
+##  Median :11.36   Median :21.20  
+##  Mean   :12.65   Mean   :22.53  
+##  3rd Qu.:16.95   3rd Qu.:25.00  
+##  Max.   :37.97   Max.   :50.00
+
+Checking for Null Values
+There are no null values to report in the data
+
+colSums(is.na(Boston))
+##    crim      zn   indus    chas     nox      rm     age     dis     rad 
+##       0       0       0       0       0       0       0       0       0 
+##     tax ptratio   black   lstat    medv 
+##       0       0       0       0       0
+
+Data sneak peek
+A quick glance into the data:
+
+Boston %>% datatable(caption = "Boston Housing")
+Show 
+10
+ entriesSearch:
+Boston Housing
+crim	zn	indus	chas	nox	rm	age	dis	rad	tax	ptratio	black	lstat	medv
+1	0.00632	18	2.31	0	0.538	6.575	65.2	4.09	1	296	15.3	396.9	4.98	24
+2	0.02731	0	7.07	0	0.469	6.421	78.9	4.9671	2	242	17.8	396.9	9.14	21.6
+3	0.02729	0	7.07	0	0.469	7.185	61.1	4.9671	2	242	17.8	392.83	4.03	34.7
+4	0.03237	0	2.18	0	0.458	6.998	45.8	6.0622	3	222	18.7	394.63	2.94	33.4
+5	0.06905	0	2.18	0	0.458	7.147	54.2	6.0622	3	222	18.7	396.9	5.33	36.2
+6	0.02985	0	2.18	0	0.458	6.43	58.7	6.0622	3	222	18.7	394.12	5.21	28.7
+7	0.08829	12.5	7.87	0	0.524	6.012	66.6	5.5605	5	311	15.2	395.6	12.43	22.9
+8	0.14455	12.5	7.87	0	0.524	6.172	96.1	5.9505	5	311	15.2	396.9	19.15	27.1
+9	0.21124	12.5	7.87	0	0.524	5.631	100	6.0821	5	311	15.2	386.63	29.93	16.5
+10	0.17004	12.5	7.87	0	0.524	6.004	85.9	6.5921	5	311	15.2	386.71	17.1	18.9
+Showing 1 to 10 of 506 entriesPrevious12345…51Next
+Correlation Matrices
+Correlation of target variable with predictor variables:
+
+rm and lstat are highly correlated with the target variable medv
+black, dis, rm, chas, zn are positively correlated with medv
+crim, indus, nox, age, rad, tax, ptratio, lstat are negatively correlated with medv
+Boston %>% correlate() %>% focus(medv)
+## # A tibble: 13 x 2
+##    rowname       medv
+##      <chr>      <dbl>
+##  1    crim -0.3883046
+##  2      zn  0.3604453
+##  3   indus -0.4837252
+##  4    chas  0.1752602
+##  5     nox -0.4273208
+##  6      rm  0.6953599
+##  7     age -0.3769546
+##  8     dis  0.2499287
+##  9     rad -0.3816262
+## 10     tax -0.4685359
+## 11 ptratio -0.5077867
+## 12   black  0.3334608
+## 13   lstat -0.7376627
+Correlation among predictor variables:
+
+On plotting the pairwise correlations between each of the variables, we see the following:
+The highest positive correlations are between rad and tax, indux and nox and negative between dis and age and dis and nox.
+
+chart.Correlation(Boston[,-14], histogram=TRUE, pch=19)
+
+
+Distributions
+Predictor vs Target variables
+We plot the scatter plots of target variable medv versus the other variables, we see that rm and lstat show parabolic nature
+
+Boston %>%
+  gather(-medv, key = "var", value = "value") %>%
+  filter(var != "chas") %>%
+  ggplot(aes(x = value, y = medv)) +
+  geom_point() +
+  stat_smooth() +
+  facet_wrap(~ var, scales = "free") +
+  theme_bw()
+
+
+Boxplots for Predictors
+Boxplots show no significant outliers in the data
+
+Boston %>%
+  gather(-medv, key = "var", value = "value") %>%
+  filter(var != "chas") %>%
+  ggplot(aes(x = '',y = value)) +
+  geom_boxplot(outlier.colour = "red", outlier.shape = 1) +
+  facet_wrap(~ var, scales = "free") +
+  theme_bw()
+
+
+Histograms for Predictors
+The histograms of predictors give the following insights:
+
+Rad and Tax seem to have two different peaks separated by no data in between
+rm follows perfect normal dostribution
+Most of the distributions here are skewed
+Boston %>%
+  gather(-medv, key = "var", value = "value") %>%
+  filter(var != "chas") %>%
+  ggplot(aes(x = value)) +
+  geom_histogram() +
+  facet_wrap(~ var, scales = "free") +
+  theme_bw()
+
+
+Splitting the Data
+We randomly split our data in 80:20 ratio as training data and test data. We will use our train data for modeling and test data for validation
+
+set.seed(12420246)
+index <- sample(nrow(Boston),nrow(Boston)*0.80)
+Boston.train <- Boston[index,]
+Boston.test <- Boston[-index,]
+Linear Regression using all predictors
+We build up a Linear regression model using all variables present in the data
+We notice that Indus and age have very high p-value and seem to be non-significant
+The estimated coefficients are as follows:
+
+model1 <- lm(medv~ ., data = Boston.train)
+sum.model1 <- summary(model1)
+sum.model1
+## 
+## Call:
+## lm(formula = medv ~ ., data = Boston.train)
+## 
+## Residuals:
+##      Min       1Q   Median       3Q      Max 
+## -16.6496  -2.7200  -0.5287   1.9042  23.9197 
+## 
+## Coefficients:
+##               Estimate Std. Error t value Pr(>|t|)    
+## (Intercept)  33.284874   5.439892   6.119 2.30e-09 ***
+## crim         -0.091348   0.034960  -2.613 0.009323 ** 
+## zn            0.046266   0.014531   3.184 0.001570 ** 
+## indus         0.052649   0.068451   0.769 0.442275    
+## chas          3.326132   0.948338   3.507 0.000505 ***
+## nox         -17.235510   4.164655  -4.139 4.29e-05 ***
+## rm            4.181386   0.437645   9.554  < 2e-16 ***
+## age          -0.004000   0.014037  -0.285 0.775809    
+## dis          -1.427200   0.217597  -6.559 1.72e-10 ***
+## rad           0.320077   0.072049   4.443 1.16e-05 ***
+## tax          -0.014904   0.004157  -3.586 0.000379 ***
+## ptratio      -0.908149   0.138454  -6.559 1.72e-10 ***
+## black         0.009042   0.002782   3.251 0.001251 ** 
+## lstat        -0.491771   0.053745  -9.150  < 2e-16 ***
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## Residual standard error: 4.573 on 390 degrees of freedom
+## Multiple R-squared:  0.7594, Adjusted R-squared:  0.7514 
+## F-statistic:  94.7 on 13 and 390 DF,  p-value: < 2.2e-16
+Model Statistics
+Checking the model stats, using MSE, R-squared, adjusted R-squared, Test MSPE, AIC and BIC as metrics:
+
+model1.mse <- (sum.model1$sigma)^2
+model1.rsq <- sum.model1$r.squared
+model1.arsq <- sum.model1$adj.r.squared
+test.pred.model1 <- predict(model1, newdata=Boston.test) 
+model1.mpse <- mean((Boston.test$medv-test.pred.model1)^2)
+model1.aic <- AIC(model1)
+model1.bic <- BIC(model1)
+
+stats.model1 <- c("full", model1.mse, model1.rsq, model1.arsq, model1.mpse, model1.aic, model1.bic)
+
+comparison_table <- c("model type", "MSE", "R-Squared", "Adjusted R-Squared", "Test MSPE", "AIC", "BIC")
+data.frame(cbind(comparison_table, stats.model1))
+##     comparison_table      stats.model1
+## 1         model type              full
+## 2                MSE    20.91633627089
+## 3          R-Squared 0.759418117004653
+## 4 Adjusted R-Squared 0.751398720904808
+## 5          Test MSPE  29.1856602359102
+## 6                AIC  2390.62832607466
+## 7                BIC  2450.64954924408
+Subset Selection
+We will use subset selection techniques for variable selection. The three methods employed are:
+
+Forward Variable selection
+Backward Variable Selection
+Exhaustive Variable Selection
+Forward Variable Selection
+We start off with Forward selection method, where we keep on adding influential variables to the model.
+lstat, rm and ptration are the most significant variables
+Following table shows the variables added to the model at each step, along with the BIC, R-squared, adj r-squared, cp values associated woth the model
+
+model2 <- regsubsets(medv~ ., data = Boston.train, nvmax = 13, method="forward")
+sum.model2 <- summary(model2)
+
+model2.subsets <- cbind(sum.model2$which, sum.model2$bic, sum.model2$rsq, sum.model2$adjr2,sum.model2$cp)
+model2.subsets <- as.data.frame(model2.subsets) 
+colnames(model2.subsets)[15:18] <- c("BIC","rsq","adjr2","cp")
+model2.subsets
+##    (Intercept) crim zn indus chas nox rm age dis rad tax ptratio black
+## 1            1    0  0     0    0   0  0   0   0   0   0       0     0
+## 2            1    0  0     0    0   0  1   0   0   0   0       0     0
+## 3            1    0  0     0    0   0  1   0   0   0   0       1     0
+## 4            1    0  0     0    1   0  1   0   0   0   0       1     0
+## 5            1    0  0     0    1   0  1   0   0   0   0       1     1
+## 6            1    0  0     0    1   0  1   0   1   0   0       1     1
+## 7            1    0  0     0    1   1  1   0   1   0   0       1     1
+## 8            1    0  1     0    1   1  1   0   1   0   0       1     1
+## 9            1    0  1     0    1   1  1   0   1   1   0       1     1
+## 10           1    0  1     0    1   1  1   0   1   1   1       1     1
+## 11           1    1  1     0    1   1  1   0   1   1   1       1     1
+## 12           1    1  1     1    1   1  1   0   1   1   1       1     1
+## 13           1    1  1     1    1   1  1   1   1   1   1       1     1
+##    lstat       BIC       rsq     adjr2        cp
+## 1      1 -310.4951 0.5498895 0.5487698 329.66053
+## 2      1 -416.5731 0.6589365 0.6572354 154.88775
+## 3      1 -458.8968 0.6973878 0.6951182  94.55548
+## 4      1 -469.3669 0.7094775 0.7065650  76.95723
+## 5      1 -475.5504 0.7181090 0.7145677  64.96489
+## 6      1 -481.3471 0.7262221 0.7220844  53.81304
+## 7      1 -497.4187 0.7407790 0.7361968  32.21528
+## 8      1 -497.9021 0.7449067 0.7397403  27.52401
+## 9      1 -494.7896 0.7467243 0.7409388  26.57762
+## 10     1 -501.7482 0.7547202 0.7484790  15.61559
+## 11     1 -502.8646 0.7590038 0.7522412  10.67159
+## 12     1 -497.4742 0.7593680 0.7519829  12.08121
+## 13     1 -491.5569 0.7594181 0.7513987  14.00000
+Plotting Model metrics
+Checking the 13 models with varying variable size, we plot the model metrics to find out the best model. R-squared keeps on increasing with added variables and hence will always favor model with highest number of variables
+Model with 11 variables gives the highest Adjusted R-squared value and the lowest cp and BIC values
+
+#PLOTS OF R2, ADJ R2, CP, BIC#
+rsq <- data.frame(round(sum.model2$rsq,5))
+model2.rsq.plot <- ggplot(data = rsq, aes(y = rsq, x = 1:13)) + 
+  geom_point() + geom_line() + 
+  geom_text(aes(label=rsq), size=3, vjust=-0.5) +
+  scale_x_continuous(breaks=1:13)
+
+adjr2 <- data.frame(round(sum.model2$adjr2,4))
+model2.adjrsq.plot <- ggplot(data = adjr2, aes(y = adjr2, x = 1:13)) + 
+  geom_point() + geom_line() + 
+  geom_text(aes(label=adjr2), size=3, vjust=-0.5) +
+  scale_x_continuous(breaks=1:13)
+
+bic <- data.frame(round(sum.model2$bic,4))
+model2.bic.plot <- ggplot(data = bic, aes(y = bic, x = 1:13)) + 
+  geom_point() + geom_line() + 
+  geom_text(aes(label=bic), size=3, vjust=-0.5) +
+  scale_x_continuous(breaks=1:13)
+
+cp <- data.frame(round(sum.model2$cp,4))
+model2.cp.plot <- ggplot(data = cp, aes(y = cp, x = 1:13)) + 
+  geom_point() + geom_line() + 
+  geom_text(aes(label=cp), size=3, vjust=-0.5) +
+  scale_x_continuous(breaks=1:13)
+
+grid.arrange(model2.rsq.plot,model2.adjrsq.plot,model2.bic.plot,model2.cp.plot, ncol=2)
+
+
+Selecting best subset
+Reiterating our findings from the plots, We find the best model is the model with all variables except age and indus
+
+which.max(sum.model2$rsq)
+## [1] 13
+which.max(sum.model2$adjr2)
+## [1] 11
+which.min(sum.model2$cp)
+## [1] 11
+which.min(sum.model2$bic)
+## [1] 11
+coef(model2,11)
+##   (Intercept)          crim            zn          chas           nox 
+##  33.007130803  -0.092092535   0.045489957   3.383711876 -16.588259678 
+##            rm           dis           rad           tax       ptratio 
+##   4.135996126  -1.440623894   0.304517981  -0.013434078  -0.897688747 
+##         black         lstat 
+##   0.008922492  -0.494178892
+Backward Variable Selection
+Now we come to Backward selection method, where we keep on removing non-influential variables from the model.
+lstat, rm and ptration are the most significant variables
+Following table shows the variables included in different sized models, along with the BIC, R-squared, adj r-squared, cp values associated with the model
+
+model3 <- regsubsets(medv~ ., data = Boston.train, nvmax = 13, method="backward")
+sum.model3 <- summary(model3)
+
+model3.subsets <- cbind(sum.model3$which, sum.model3$bic, sum.model3$rsq, sum.model3$adjr2,sum.model3$cp)
+model3.subsets <- as.data.frame(model3.subsets) 
+colnames(model3.subsets)[15:18] <- c("BIC","rsq","adjr2","cp")
+model3.subsets
+##    (Intercept) crim zn indus chas nox rm age dis rad tax ptratio black
+## 1            1    0  0     0    0   0  0   0   0   0   0       0     0
+## 2            1    0  0     0    0   0  1   0   0   0   0       0     0
+## 3            1    0  0     0    0   0  1   0   0   0   0       1     0
+## 4            1    0  0     0    0   0  1   0   1   0   0       1     0
+## 5            1    0  0     0    0   1  1   0   1   0   0       1     0
+## 6            1    0  0     0    1   1  1   0   1   0   0       1     0
+## 7            1    0  0     0    1   1  1   0   1   0   0       1     1
+## 8            1    0  0     0    1   1  1   0   1   1   0       1     1
+## 9            1    0  0     0    1   1  1   0   1   1   1       1     1
+## 10           1    0  1     0    1   1  1   0   1   1   1       1     1
+## 11           1    1  1     0    1   1  1   0   1   1   1       1     1
+## 12           1    1  1     1    1   1  1   0   1   1   1       1     1
+## 13           1    1  1     1    1   1  1   1   1   1   1       1     1
+##    lstat       BIC       rsq     adjr2        cp
+## 1      1 -310.4951 0.5498895 0.5487698 329.66053
+## 2      1 -416.5731 0.6589365 0.6572354 154.88775
+## 3      1 -458.8968 0.6973878 0.6951182  94.55548
+## 4      1 -464.5863 0.7060192 0.7030721  82.56332
+## 5      1 -482.8609 0.7231641 0.7196862  56.77032
+## 6      1 -493.4400 0.7342956 0.7302799  40.72531
+## 7      1 -497.4187 0.7407790 0.7361968  32.21528
+## 8      1 -495.8000 0.7435759 0.7383825  29.68131
+## 9      1 -499.0447 0.7493779 0.7436530  22.27591
+## 10     1 -501.7482 0.7547202 0.7484790  15.61559
+## 11     1 -502.8646 0.7590038 0.7522412  10.67159
+## 12     1 -497.4742 0.7593680 0.7519829  12.08121
+## 13     1 -491.5569 0.7594181 0.7513987  14.00000
+Plotting Model metrics
+Checking the 13 models with varying variable size, we plot the model metrics to find out the best model. R-squared keeps on increasing with added variables and hence will always favor model with highest number of variables
+Model with 11 variables gives the highest Adjusted R-squared value and the lowest cp and BIC values This is consistent with the forward selection model
+
+#PLOTS OF R2, ADJ R2, CP, BIC#
+rsq <- data.frame(round(sum.model3$rsq,5))
+model3.rsq.plot <- ggplot(data = rsq, aes(y = rsq, x = 1:13)) + 
+  geom_point() + geom_line() + 
+  geom_text(aes(label=rsq), size=3, vjust=-0.5) +
+  scale_x_continuous(breaks=1:13)
+
+adjr2 <- data.frame(round(sum.model3$adjr2,4))
+model3.adjrsq.plot <- ggplot(data = adjr2, aes(y = adjr2, x = 1:13)) + 
+  geom_point() + geom_line() + 
+  geom_text(aes(label=adjr2), size=3, vjust=-0.5) +
+  scale_x_continuous(breaks=1:13)
+
+bic <- data.frame(round(sum.model3$bic,4))
+model3.bic.plot <- ggplot(data = bic, aes(y = bic, x = 1:13)) + 
+  geom_point() + geom_line() + 
+  geom_text(aes(label=bic), size=3, vjust=-0.5) +
+  scale_x_continuous(breaks=1:13)
+
+cp <- data.frame(round(sum.model3$cp,4))
+model3.cp.plot <- ggplot(data = cp, aes(y = cp, x = 1:13)) + 
+  geom_point() + geom_line() + 
+  geom_text(aes(label=cp), size=3, vjust=-0.5) +
+  scale_x_continuous(breaks=1:13)
+
+grid.arrange(model3.rsq.plot,model3.adjrsq.plot,model3.bic.plot,model3.cp.plot, ncol=2)
+
+
+Selecting best subset
+We find the best model is the model with all variables except age and indus
+
+which.max(sum.model3$rsq)
+## [1] 13
+which.max(sum.model3$adjr2)
+## [1] 11
+which.min(sum.model3$cp)
+## [1] 11
+which.min(sum.model3$bic)
+## [1] 11
+coef(model3,11)
+##   (Intercept)          crim            zn          chas           nox 
+##  33.007130803  -0.092092535   0.045489957   3.383711876 -16.588259678 
+##            rm           dis           rad           tax       ptratio 
+##   4.135996126  -1.440623894   0.304517981  -0.013434078  -0.897688747 
+##         black         lstat 
+##   0.008922492  -0.494178892
+Exhaustive Subset Selection
+Last subset selection method is exhaustive search. Here we find the best subset of variables of varying sizes
+lstat, rm and ptration are the most significant variables
+Following table shows the variables included in different sized models, along with the BIC, R-squared, adj r-squared, cp values associated with the model
+
+model4 <- regsubsets(medv~ ., data = Boston.train, nvmax = 13)
+sum.model4 <- summary(model4)
+
+model4.subsets <- cbind(sum.model4$which, sum.model4$bic, sum.model4$rsq, sum.model4$adjr2,sum.model4$cp)
+model4.subsets <- as.data.frame(model4.subsets) 
+colnames(model4.subsets)[15:18] <- c("BIC","rsq","adjr2","cp")
+model4.subsets
+##    (Intercept) crim zn indus chas nox rm age dis rad tax ptratio black
+## 1            1    0  0     0    0   0  0   0   0   0   0       0     0
+## 2            1    0  0     0    0   0  1   0   0   0   0       0     0
+## 3            1    0  0     0    0   0  1   0   0   0   0       1     0
+## 4            1    0  0     0    1   0  1   0   0   0   0       1     0
+## 5            1    0  0     0    0   1  1   0   1   0   0       1     0
+## 6            1    0  0     0    1   1  1   0   1   0   0       1     0
+## 7            1    0  0     0    1   1  1   0   1   0   0       1     1
+## 8            1    0  1     0    1   1  1   0   1   0   0       1     1
+## 9            1    0  0     0    1   1  1   0   1   1   1       1     1
+## 10           1    0  1     0    1   1  1   0   1   1   1       1     1
+## 11           1    1  1     0    1   1  1   0   1   1   1       1     1
+## 12           1    1  1     1    1   1  1   0   1   1   1       1     1
+## 13           1    1  1     1    1   1  1   1   1   1   1       1     1
+##    lstat       BIC       rsq     adjr2        cp
+## 1      1 -310.4951 0.5498895 0.5487698 329.66053
+## 2      1 -416.5731 0.6589365 0.6572354 154.88775
+## 3      1 -458.8968 0.6973878 0.6951182  94.55548
+## 4      1 -469.3669 0.7094775 0.7065650  76.95723
+## 5      1 -482.8609 0.7231641 0.7196862  56.77032
+## 6      1 -493.4400 0.7342956 0.7302799  40.72531
+## 7      1 -497.4187 0.7407790 0.7361968  32.21528
+## 8      1 -497.9021 0.7449067 0.7397403  27.52401
+## 9      1 -499.0447 0.7493779 0.7436530  22.27591
+## 10     1 -501.7482 0.7547202 0.7484790  15.61559
+## 11     1 -502.8646 0.7590038 0.7522412  10.67159
+## 12     1 -497.4742 0.7593680 0.7519829  12.08121
+## 13     1 -491.5569 0.7594181 0.7513987  14.00000
+Plotting Model metrics
+Checking the 13 models with varying variable size, we plot the model metrics to find out the best model. R-squared keeps on increasing with added variables and hence will always favor model with highest number of variables
+Model with 11 variables gives the highest Adjusted R-squared value and the lowest cp and BIC values
+
+#PLOTS OF R2, ADJ R2, CP, BIC#
+rsq <- data.frame(round(sum.model4$rsq,5))
+model4.rsq.plot <- ggplot(data = rsq, aes(y = rsq, x = 1:13)) + 
+  geom_point() + geom_line() + 
+  geom_text(aes(label=rsq), size=3, vjust=-0.5) +
+  scale_x_continuous(breaks=1:13)
+
+adjr2 <- data.frame(round(sum.model4$adjr2,4))
+model4.adjrsq.plot <- ggplot(data = adjr2, aes(y = adjr2, x = 1:13)) + 
+  geom_point() + geom_line() + 
+  geom_text(aes(label=adjr2), size=3, vjust=-0.5) +
+  scale_x_continuous(breaks=1:13)
+
+bic <- data.frame(round(sum.model4$bic,4))
+model4.bic.plot <- ggplot(data = bic, aes(y = bic, x = 1:13)) + 
+  geom_point() + geom_line() + 
+  geom_text(aes(label=bic), size=3, vjust=-0.5) +
+  scale_x_continuous(breaks=1:13)
+
+cp <- data.frame(round(sum.model4$cp,4))
+model4.cp.plot <- ggplot(data = cp, aes(y = cp, x = 1:13)) + 
+  geom_point() + geom_line() + 
+  geom_text(aes(label=cp), size=3, vjust=-0.5) +
+  scale_x_continuous(breaks=1:13)
+
+grid.arrange(model4.rsq.plot,model4.adjrsq.plot,model4.bic.plot,model4.cp.plot, ncol=2)
+
+
+Selecting best subset
+Again we find the best model is the model with all variables except age and indus, hence we use that model as our selected model
+
+which.max(sum.model4$rsq)
+## [1] 13
+which.max(sum.model4$adjr2)
+## [1] 11
+which.min(sum.model4$cp)
+## [1] 11
+which.min(sum.model4$bic)
+## [1] 11
+coef(model4,11)
+##   (Intercept)          crim            zn          chas           nox 
+##  33.007130803  -0.092092535   0.045489957   3.383711876 -16.588259678 
+##            rm           dis           rad           tax       ptratio 
+##   4.135996126  -1.440623894   0.304517981  -0.013434078  -0.897688747 
+##         black         lstat 
+##   0.008922492  -0.494178892
+Selected Model, all variables except AGE and INDUS
+From our subset selection techniques, we select the model without indus and age as our best model. Summary of the model:
+
+model.ss <- lm(medv ~ . -indus -age, data=Boston.train)
+sum.model.ss <- summary(model.ss)
+sum.model.ss
+## 
+## Call:
+## lm(formula = medv ~ . - indus - age, data = Boston.train)
+## 
+## Residuals:
+##      Min       1Q   Median       3Q      Max 
+## -16.6079  -2.6917  -0.4914   1.8665  23.8361 
+## 
+## Coefficients:
+##               Estimate Std. Error t value Pr(>|t|)    
+## (Intercept)  33.007131   5.393222   6.120 2.27e-09 ***
+## crim         -0.092093   0.034889  -2.640 0.008631 ** 
+## zn            0.045490   0.014276   3.187 0.001555 ** 
+## chas          3.383712   0.938148   3.607 0.000350 ***
+## nox         -16.588260   3.829391  -4.332 1.88e-05 ***
+## rm            4.135996   0.425514   9.720  < 2e-16 ***
+## dis          -1.440624   0.203541  -7.078 6.80e-12 ***
+## rad           0.304518   0.067808   4.491 9.34e-06 ***
+## tax          -0.013434   0.003650  -3.680 0.000266 ***
+## ptratio      -0.897689   0.137153  -6.545 1.86e-10 ***
+## black         0.008922   0.002770   3.221 0.001385 ** 
+## lstat        -0.494179   0.049816  -9.920  < 2e-16 ***
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## Residual standard error: 4.566 on 392 degrees of freedom
+## Multiple R-squared:  0.759,  Adjusted R-squared:  0.7522 
+## F-statistic: 112.2 on 11 and 392 DF,  p-value: < 2.2e-16
+Getting the model stats:
+
+model.ss.mse <- (sum.model.ss$sigma)^2
+model.ss.rsq <- sum.model.ss$r.squared
+model.ss.arsq <- sum.model.ss$adj.r.squared
+test.pred.model.ss <- predict(model.ss, newdata=Boston.test) 
+model.ss.mpse <- mean((Boston.test$medv-test.pred.model.ss)^2)
+modelss.aic <- AIC(model.ss)
+modelss.bic <- BIC(model.ss)
+
+#ROW#
+stats.model.ss <- c("model.SS", model.ss.mse, model.ss.rsq, model.ss.arsq, model.ss.mpse, modelss.aic, modelss.bic)
+
+data.frame(cbind(comparison_table, stats.model.ss))
+##     comparison_table    stats.model.ss
+## 1         model type          model.SS
+## 2                MSE  20.8454551923437
+## 3          R-Squared 0.759003826253492
+## 4 Adjusted R-Squared 0.752241178520809
+## 5          Test MSPE    28.98714370479
+## 6                AIC  2387.32343044005
+## 7                BIC  2439.34182385355
+LASSO Variable Selection
+Now we use LASSO variable selection technique. We try to shrink the coefficient estimates of non-significant variables to zero.
+Here lambda is the penalty factor which helps in variable selection and so higher the lambda, lesser will be the significant variables included in the model.
+
+Standardize Covariates
+We need to standardize the variables before using them in model creation
+
+Boston.X.std <- scale(dplyr::select(Boston, -medv))
+X.train<- as.matrix(Boston.X.std)[index,]
+X.test<-  as.matrix(Boston.X.std)[-index,]
+Y.train<- Boston[index, "medv"]
+Y.test<- Boston[-index, "medv"]
+Fit Model
+We fit the LASSO model to our data. From the plot below, we see that as the value of lambda keeps on increasing, the coefficients for the variables tend to 0.
+
+lasso.fit<- glmnet(x=X.train, y=Y.train, alpha = 1)
+plot(lasso.fit, xvar = "lambda", label=TRUE)
+
+
+Cross-Validation to get optimal lambda
+Using cross-validation we now find the appropriate lambda value using error versus lambda plot.
+We take the value with the least error as well as the error value which is one standard deviation away from the lowest error value. we then build models on the basis of both of these. For the higher error value , the number of variables selected decreases.
+
+For model with lambda=min, coefficients of age and indus get reduced to zero. Formodel with lambda=1se, coefficients of indus, age, rad and tax get reduced to zero
+
+cv.lasso<- cv.glmnet(x=X.train, y=Y.train, alpha = 1, nfolds = 10)
+plot(cv.lasso)
+
+
+names(cv.lasso)
+##  [1] "lambda"     "cvm"        "cvsd"       "cvup"       "cvlo"      
+##  [6] "nzero"      "name"       "glmnet.fit" "lambda.min" "lambda.1se"
+#Lambda with minimum error
+cv.lasso$lambda.min
+## [1] 0.009191869
+#Lambda with Error 1 SD above
+cv.lasso$lambda.1se
+## [1] 0.2873117
+#Coefficients for Lambda min
+coef(lasso.fit, s=cv.lasso$lambda.min)
+## 14 x 1 sparse Matrix of class "dgCMatrix"
+##                       1
+## (Intercept) 22.53634524
+## crim        -0.75931321
+## zn           1.03557325
+## indus        0.25709196
+## chas         0.84773977
+## nox         -1.92865143
+## rm           2.94954947
+## age         -0.09950879
+## dis         -2.94604191
+## rad          2.59772893
+## tax         -2.31906979
+## ptratio     -1.94612065
+## black        0.81335916
+## lstat       -3.50571928
+#Coefficients for lambda 1se
+coef(lasso.fit, s=cv.lasso$lambda.1se)
+## 14 x 1 sparse Matrix of class "dgCMatrix"
+##                       1
+## (Intercept) 22.50076085
+## crim        -0.15165372
+## zn           0.03664732
+## indus        .         
+## chas         0.72233179
+## nox         -0.69809895
+## rm           3.24190776
+## age          .         
+## dis         -0.91043727
+## rad          .         
+## tax         -0.10217655
+## ptratio     -1.68940960
+## black        0.59431515
+## lstat       -3.46231337
+Model Statistics
+Computing various model performance metrics:
+
+#TRAIN DATA PREDICTION
+pred.lasso.train.min <- predict(lasso.fit, newx = X.train, s=cv.lasso$lambda.min)
+pred.lasso.train.1se <- predict(lasso.fit, newx = X.train, s=cv.lasso$lambda.1se)
+
+#TEST DATA PREDICTION
+pred.lasso.test.min<- predict(lasso.fit, newx = X.test, s=cv.lasso$lambda.min)
+pred.lasso.test.1se<- predict(lasso.fit, newx = X.test, s=cv.lasso$lambda.1se)
+
+#MSE
+lasso.min.mse <- sum((Y.train-pred.lasso.train.min)^2)/(404-14)
+lasso.1se.mse <- sum((Y.train-pred.lasso.train.1se)^2)/(404-11)
+
+#MSPE
+lasso.min.mpse <- mean((Y.test-pred.lasso.test.min)^2)
+lasso.1se.mpse <- mean((Y.test-pred.lasso.test.1se)^2)
+
+#R_squared
+sst <- sum((Y.train - mean(Y.train))^2)
+sse_min <- sum((Y.train-pred.lasso.train.min)^2)
+sse_1se <- sum((Y.train-pred.lasso.train.1se)^2)
+
+rsq_min <- 1 - sse_min / sst
+rsq_1se <- 1 - sse_1se / sst
+
+#adj_R_squared
+#adj r squared = 1 - ((n-1)/(n-p-1))(1-r_squared)
+
+adj_rsq_min <- 1 - (dim(X.train)[1]-1)*(1-rsq_min)/(dim(X.train)[1]-12-1)
+adj_rsq_1se <- 1 - (dim(X.train)[1]-1)*(1-rsq_1se)/(dim(X.train)[1]-10-1)
+
+stats.model.lasso.min <- c("model.lasso.min", lasso.min.mse, rsq_min, adj_rsq_min, lasso.min.mpse)
+stats.model.lasso.1se <- c("model.lasso.1se", lasso.1se.mse, rsq_1se, adj_rsq_1se, lasso.1se.mpse)
+
+comparison_table <- c("model type", "MSE", "R-Squared", "Adjusted R-Squared", "Test MSPE")
+data.frame(cbind(comparison_table, stats.model.lasso.min, stats.model.lasso.1se))
+##     comparison_table stats.model.lasso.min stats.model.lasso.1se
+## 1         model type       model.lasso.min       model.lasso.1se
+## 2                MSE      20.9237565769199      23.2134996258618
+## 3          R-Squared     0.759332767870179     0.730942026663146
+## 4 Adjusted R-Squared     0.751946561257499     0.724095767799613
+## 5          Test MSPE      29.1284043137561      31.8987667395708
+comparing models from Subset selection, LASSO with Full model
+Comparing the performance of 4 models obrtained so far:
+
+MSE: MSE of all models are comparable around the 23 mark, except the LASSO.1se model which gives a MSE of 26.39
+R-Squared: Full model performs best in this category as expected, and the LASSO,1se model performs the worst, as expected again
+Adjusted R-squared: A better metric for comparing models of diff variable sizes, Subset selection model performs the best here
+Test MSPE: LASSO.1se model performs the best here with a low MSPE of 18.88. All other models also do a pretty good job with scores around the 19 mark
+We select the subset selection model as our best model: Full model - age - indus
+
+data.frame(cbind(comparison_table, c("full", model1.mse, model1.rsq, model1.arsq, model1.mpse), c("model.SS", model.ss.mse, model.ss.rsq, model.ss.arsq, model.ss.mpse), stats.model.lasso.min, stats.model.lasso.1se))
+##     comparison_table                V2                V3
+## 1         model type              full          model.SS
+## 2                MSE    20.91633627089  20.8454551923437
+## 3          R-Squared 0.759418117004653 0.759003826253492
+## 4 Adjusted R-Squared 0.751398720904808 0.752241178520809
+## 5          Test MSPE  29.1856602359102    28.98714370479
+##   stats.model.lasso.min stats.model.lasso.1se
+## 1       model.lasso.min       model.lasso.1se
+## 2      20.9237565769199      23.2134996258618
+## 3     0.759332767870179     0.730942026663146
+## 4     0.751946561257499     0.724095767799613
+## 5      29.1284043137561      31.8987667395708
+Residual Analysis plots
+We do a quick residual analysis of the selected subset model and observe the following:
+
+The variance is not completely constant and hence the assumption of constant variance is not totally satisfied
+From the q-q plot we see that it is not completely normal and a little skewed to the right
+There is no autocorrelation observed in the model
+There are no observed outliers
